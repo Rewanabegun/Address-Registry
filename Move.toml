@@ -1,0 +1,15 @@
+[package]
+name = "AddressRegistry"
+version = "1.0.0"
+authors = []
+
+[addresses]
+rezwana_address="0xce88ac6ea632ae3310c0cf813c83daf97ea863a438b5586880a9b007856a3363"
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]
