@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Registry - Aptos Name Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .wallet-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .wallet-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .wallet-btn.connected {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            font-family: 'Monaco', monospace;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #36d1dc, #5b86e5);
+        }
+
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .address-short {
+            font-family: 'Monaco', monospace;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid #ddd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        .copy-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="#" class="logo">
+                🏷️ Address Registry
+            </a>
+            <button class="wallet-btn" id="connectWallet">Connect Wallet</button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Aptos Address Registry</h1>
+                <p>Map complex blockchain addresses to human-readable names for easier transactions and better user experience.</p>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRegistries">25</div>
+                        <div>Active Registries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalNames">143</div>
+                        <div>Names Registered</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalLookups">892</div>
+                        <div>Successful Lookups</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container">
+            <div class="main-content">
+                <!-- Registry Management -->
+                <div class="card">
+                    <h2>
+                        <span class="card-icon">⚙️</span>
+                        Registry Management
+                    </h2>
+                    
+                    <div class="form-group">
+                        <button class="btn" id="createRegistryBtn">
+                            Create My Registry
+                        </button>
+                        <div class="hint">Create your personal address registry to start mapping names</div>
+                    </div>
+                    
+                    <div id="registryResult"></div>
+                </div>
+
+                <!-- Name Registration -->
+                <div class="card">
+                    <h2>
+                        <span class="card-icon">📝</span>
+                        Register Name
+                    </h2>
+                    
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="registryOwner">Registry Owner Address</label>
+                            <input type="text" class="form-control" id="registryOwner" 
+                                   placeholder="0x..." readonly>
+                            <div class="hint">Your connected wallet address (registry owner)</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nameToRegister">Name</label>
+                            <input type="text" class="form-control" id="nameToRegister" 
+                                   placeholder="alice" required>
+                            <div class="hint">Choose a memorable name (letters, numbers, hyphens only)</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="targetAddress">Target Address</label>
+                            <input type="text" class="form-control" id="targetAddress" 
+                                   placeholder="0x..." required>
+                            <div class="hint">The address this name will point to</div>
+                        </div>
+
+                        <button type="submit" class="btn" id="registerBtn">
+                            Register Name
+                        </button>
+                    </form>
+                    
+                    <div id="registerResult"></div>
+                </div>
+
+                <!-- Lookup by Name -->
+                <div class="card">
+                    <h2>
+                        <span class="card-icon">🔍</span>
+                        Lookup by Name
+                    </h2>
+                    
+                    <form id="lookupByNameForm">
+                        <div class="form-group">
+                            <label for="lookupRegistryOwner">Registry Owner</label>
+                            <input type="text" class="form-control" id="lookupRegistryOwner" 
+                                   placeholder="0x..." required>
+                            <div class="hint">Address of the registry owner</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lookupName">Name</label>
+                            <input type="text" class="form-control" id="lookupName" 
+                                   placeholder="alice" required>
+                            <div class="hint">Name to lookup</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary">
+                            Find Address
+                        </button>
+                    </form>
+                    
+                    <div id="lookupNameResult"></div>
+                </div>
+
+                <!-- Lookup by Address -->
+                <div class="card">
+                    <h2>
+                        <span class="card-icon">🔍</span>
+                        Lookup by Address
+                    </h2>
+                    
+                    <form id="lookupByAddressForm">
+                        <div class="form-group">
+                            <label for="lookupRegistryOwner2">Registry Owner</label>
+                            <input type="text" class="form-control" id="lookupRegistryOwner2" 
+                                   placeholder="0x..." required>
+                            <div class="hint">Address of the registry owner</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lookupAddress">Address</label>
+                            <input type="text" class="form-control" id="lookupAddress" 
+                                   placeholder="0x..." required>
+                            <div class="hint">Address to lookup</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary">
+                            Find Name
+                        </button>
+                    </form>
+                    
+                    <div id="lookupAddressResult"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Application state
+        let walletConnected = false;
+        let userAddress = '';
+        let registryCreated = false;
+
+        // Mock data for demonstration
+        const mockRegistries = {
+            '0x1234567890abcdef1234567890abcdef12345678': {
+                'alice': '0xabcdef1234567890abcdef1234567890abcdef12',
+                'bob': '0x9876543210fedcba9876543210fedcba98765432',
+                'charlie': '0x1111222233334444555566667777888899990000'
+            }
+        };
+
+        const mockReverseRegistries = {
+            '0x1234567890abcdef1234567890abcdef12345678': {
+                '0xabcdef1234567890abcdef1234567890abcdef12': 'alice',
+                '0x9876543210fedcba9876543210fedcba98765432': 'bob',
+                '0x1111222233334444555566667777888899990000': 'charlie'
+            }
+        };
+
+        // DOM elements
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const createRegistryBtn = document.getElementById('createRegistryBtn');
+        const registerForm = document.getElementById('registerForm');
+        const lookupByNameForm = document.getElementById('lookupByNameForm');
+        const lookupByAddressForm = document.getElementById('lookupByAddressForm');
+
+        // Utility functions
+        function shortenAddress(address) {
+            return `${address.slice(0, 6)}...${address.slice(-6)}`;
+        }
+
+        function generateRandomAddress() {
+            return '0x' + Array.from({length: 40}, () => 
+                Math.floor(Math.random() * 16).toString(16)
+            ).join('');
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+            setTimeout(() => element.innerHTML = '', 8000);
+        }
+
+        function setLoading(button, loading, text = 'Processing...') {
+            if (loading) {
+                button.innerHTML = `<span class="loading"></span>${text}`;
+                button.disabled = true;
+            } else {
+                button.disabled = false;
+            }
+        }
+
+        function isValidAddress(address) {
+            return /^0x[a-fA-F0-9]{40}$/.test(address);
+        }
+
+        function isValidName(name) {
+            return /^[a-zA-Z0-9-]+$/.test(name) && name.length > 0;
+        }
+
+        // Wallet connection
+        connectWalletBtn.addEventListener('click', async () => {
+            if (!walletConnected) {
+                setLoading(connectWalletBtn, true, 'Connecting...');
+                
+                setTimeout(() => {
+                    walletConnected = true;
+                    userAddress = generateRandomAddress();
+                    
+                    connectWalletBtn.textContent = shortenAddress(userAddress);
+                    connectWalletBtn.classList.add('connected');
+                    
+                    document.getElementById('registryOwner').value = userAddress;
+                    
+                    showResult('registryResult', 
+                        'Wallet connected! You can now create your registry.', 'success');
+                        
+                    setLoading(connectWalletBtn, false);
+                }, 2000);
+            } else {
+                walletConnected = false;
+                userAddress = '';
+                registryCreated = false;
+                
+                connectWalletBtn.textContent = 'Connect Wallet';
+                connectWalletBtn.classList.remove('connected');
+                
+                document.getElementById('registryOwner').value = '';
+                showResult('registryResult', 'Wallet disconnected.', 'info');
+            }
+        });
+
+        // Create registry
+        createRegistryBtn.addEventListener('click', async () => {
+            if (!walletConnected) {
+                showResult('registryResult', 'Please connect your wallet first.', 'error');
+                return;
+            }
+
+            if (registryCreated) {
+                showResult('registryResult', 'Registry already created for this address.', 'info');
+                return;
+            }
+
+            setLoading(createRegistryBtn, true, 'Creating Registry...');
+            
+            setTimeout(() => {
+                registryCreated = true;
+                mockRegistries[userAddress] = {};
+                mockReverseRegistries[userAddress] = {};
+                
+                createRegistryBtn.innerHTML = '✅ Registry Created';
+                showResult('registryResult', 
+                    `Registry successfully created for ${shortenAddress(userAddress)}`, 'success');
+                
+                // Update stats
+                document.getElementById('totalRegistries').textContent = 
+                    parseInt(document.getElementById('totalRegistries').textContent) + 1;
+            }, 3000);
+        });
+
+        // Register name
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const registryOwner = document.getElementById('registryOwner').value;
+            const name = document.getElementById('nameToRegister').value;
+            const targetAddress = document.getElementById('targetAddress').value;
+            
+            if (!walletConnected) {
+                showResult('registerResult', 'Please connect your wallet first.', 'error');
+                return;
+            }
+
+            if (!isValidAddress(targetAddress)) {
+                showResult('registerResult', 'Invalid target address format.', 'error');
+                return;
+            }
+
+            if (!isValidName(name)) {
+                showResult('registerResult', 'Invalid name. Use only letters, numbers, and hyphens.', 'error');
+                return;
+            }
+
+            if (!mockRegistries[registryOwner]) {
+                showResult('registerResult', 'Registry not found. Create registry first.', 'error');
+                return;
+            }
+
+            if (mockRegistries[registryOwner][name]) {
+                showResult('registerResult', 'Name already exists in this registry.', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('registerBtn');
+            setLoading(submitBtn, true, 'Registering Name...');
+            
+            setTimeout(() => {
+                // Add to mock data
+                mockRegistries[registryOwner][name] = targetAddress;
+                mockReverseRegistries[registryOwner][targetAddress] = name;
+                
+                showResult('registerResult', 
+                    `Successfully registered "${name}" → ${shortenAddress(targetAddress)}`, 'success');
+                
+                // Clear form
+                document.getElementById('nameToRegister').value = '';
+                document.getElementById('targetAddress').value = '';
+                
+                // Update stats
+                document.getElementById('totalNames').textContent = 
+                    parseInt(document.getElementById('totalNames').textContent) + 1;
+                
+                submitBtn.innerHTML = 'Register Name';
+            }, 3000);
+        });
+
+        // Lookup by name
+        lookupByNameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const registryOwner = document.getElementById('lookupRegistryOwner').value;
+            const name = document.getElementById('lookupName').value;
+            
+            if (!isValidAddress(registryOwner)) {
+                showResult('lookupNameResult', 'Invalid registry owner address.', 'error');
+                return;
+            }
+
+            const submitBtn = lookupByNameForm.querySelector('button');
+            setLoading(submitBtn, true, 'Searching...');
+            
+            setTimeout(() => {
+                if (mockRegistries[registryOwner] && mockRegistries[registryOwner][name]) {
+                    const address = mockRegistries[registryOwner][name];
+                    showResult('lookupNameResult', 
+                        `Found: "${name}" → <span class="address-short">${address}</span>
+                         <button class="copy-btn" onclick="navigator.clipboard.writeText('${address}')">Copy</button>`, 
+                        'success');
+                    
+                    // Update stats
+                    document.getElementById('totalLookups').textContent = 
+                        parseInt(document.getElementById('totalLookups').textContent) + 1;
+                } else {
+                    showResult('lookupNameResult', 'Name not found in registry.', 'error');
+                }
+                
+                submitBtn.innerHTML = 'Find Address';
+            }, 2000);
+        });
+
+        // Lookup by address
+        lookupByAddressForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const registryOwner = document.getElementById('lookupRegistryOwner2').value;
+            const address = document.getElementById('lookupAddress').value;
+            
+            if (!isValidAddress(registryOwner) || !isValidAddress(address)) {
+                showResult('lookupAddressResult', 'Invalid address format.', 'error');
+                return;
+            }
+
+            const submitBtn = lookupByAddressForm.querySelector('button');
+            setLoading(submitBtn, true, 'Searching...');
+            
+            setTimeout(() => {
+                if (mockReverseRegistries[registryOwner] && mockReverseRegistries[registryOwner][address]) {
+                    const name = mockReverseRegistries[registryOwner][address];
+                    showResult('lookupAddressResult', 
+                        `Found: ${shortenAddress(address)} → <strong>"${name}"</strong>`, 'success');
+                    
+                    // Update stats
+                    document.getElementById('totalLookups').textContent = 
+                        parseInt(document.getElementById('totalLookups').textContent) + 1;
+                } else {
+                    showResult('lookupAddressResult', 'Address not found in registry.', 'error');
+                }
+                
+                submitBtn.innerHTML = 'Find Name
